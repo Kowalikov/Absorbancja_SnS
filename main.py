@@ -60,7 +60,7 @@ def plotChart(wlnp, insnp, title):
     plt.show()
 
 
-def plotRegression(wlnp, absor, title, regRange1, regRange2):
+def plotRegression(wlnp, absor, title, regRange1, regRange2, plot=True):
     title+=" with regression"
     xr1 = wlnp[regRange1[0]:regRange1[1]]
     yr1 = absor[regRange1[0]:regRange1[1]]
@@ -73,16 +73,17 @@ def plotRegression(wlnp, absor, title, regRange1, regRange2):
     x1 = wlnp[regRange1[0]:]
     x2 = wlnp[regRange2[0]:]
 
-    fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
-    ax.plot(wlnp, absor, '-', color='firebrick')
-    ax.plot(x1, poly1d_fn1(x1), '--', color= "lightsteelblue")
-    ax.plot(x2, poly1d_fn2(x2), '--', color = "cornflowerblue")
-    ax.set_title(title)
-    plt.gca().yaxis.set_major_formatter(MathTextSciFormatter("%1.2e"))
-    ax.grid(b=True, color='silver', which="both", linestyle='-', linewidth=0.5)
-    plt.ylim(0, 8)
-    plt.show()
+    if plot==True:
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        ax.plot(wlnp, absor, '-', color='firebrick')
+        ax.plot(x1, poly1d_fn1(x1), '--', color= "lightsteelblue")
+        ax.plot(x2, poly1d_fn2(x2), '--', color = "cornflowerblue")
+        ax.set_title(title)
+        plt.gca().yaxis.set_major_formatter(MathTextSciFormatter("%1.2e"))
+        ax.grid(b=True, color='silver', which="both", linestyle='-', linewidth=0.5)
+        plt.ylim(0, 8)
+        plt.show()
 
     return coef1, coef2
 
@@ -98,7 +99,7 @@ def Absorbance(i0, i):
     return absorbance
 
 
-def absorptionAnalyse(regRange1=[551-319, 551-289], regRange2=[551-369, 551-341], t=0, material='Sns', plotIntens=False, plotReg = False):
+def absorptionAnalyse(regRange1=[551-319, 551-289], regRange2=[551-369, 551-341], t=0, material='Sns', plotIntens=False, plotReg = False, plotAny=False):
     if t==0:
         t=10
     workdir = "./data/"+material+"/"
@@ -115,18 +116,22 @@ def absorptionAnalyse(regRange1=[551-319, 551-289], regRange2=[551-369, 551-341]
     wlnp, insnp, phnp, df = readData(workdir, filename)
     wlRefnp, insRefnp, phRefnp, dfRef= readData(workdir, filenameRef)
 
-    if plotIntens==True:
+    if plotIntens==True and plotAny==True:
         title = "Intensity for wavelength T="+str(t)+"K"
         plotChart(wlnp, insnp, title)
 
     absor = Absorbance(insRefnp, insnp)
     title = "Absorpion for wavelength T="+str(t)+"K"
-    plotChart(wlnp, absor, title)
+    if plotAny==True:
+        plotChart(wlnp, absor, title)
 
     global Eg
-    if plotReg==True:
-        coe1, coe2 = plotRegression(wlnp, absor, title, regRange1, regRange2)
+    if plotReg==False or plotAny==False:
+        coe1, coe2 = plotRegression(wlnp, absor, title, regRange1, regRange2, plot=False)
         Eg.append([-coe1[1]/coe1[0], -coe2[1]/coe2[0], coe1[0], coe1[1], coe2[0], coe2[1]])
+    else:
+        coe1, coe2 = plotRegression(wlnp, absor, title, regRange1, regRange2, plot=True)
+        Eg.append([-coe1[1] / coe1[0], -coe2[1] / coe2[0], coe1[0], coe1[1], coe2[0], coe2[1]])
 
 
 def writeBandGaps(Eg):
@@ -159,8 +164,22 @@ def arrayPrep():
 Eg=[]
 temps, regRan1, regRan2 = arrayPrep()
 for x in temps:
-    absorptionAnalyse(regRan1[int(x/20)], regRan2[int(x/20)], t=x, material='SnS', plotIntens = False, plotReg=True)
+    absorptionAnalyse(regRan1[int(x/20)], regRan2[int(x/20)], t=x, material='SnS', plotIntens = False, plotReg=True, plotAny=True)
 
 writeBandGaps(Eg)
+print(Eg[:][0])
+Egnp=np.asarray(Eg).transpose()
 
+temps[0]=10
+fig = plt.figure()
+ax = fig.add_subplot(1, 1, 1)
+line1, = ax.plot(temps, Egnp[:][0], 'o', color='seagreen')
+line2, = ax.plot(temps, Egnp[:][1], 'o', color='deepskyblue')
+line1.set_label("Eg")
+line2.set_label("Eg+Ek")
+ax.legend()
+ax.set_title("Eg and Eg+Ek form the temperature")
+plt.gca().yaxis.set_major_formatter(MathTextSciFormatter("%1.2e"))
+ax.grid(b=True, color='silver', which="both", linestyle='-', linewidth=0.5)
+plt.show()
 #absorptionAnalyse(t=10, material='SnS', plotIntens=False)
