@@ -134,7 +134,7 @@ def absorptionAnalyse(regRange1=[551-319, 551-289], regRange2=[551-369, 551-341]
         Eg.append([-coe1[1] / coe1[0], -coe2[1] / coe2[0], coe1[0], coe1[1], coe2[0], coe2[1]])
 
 
-def writeBandGaps(Eg):
+def writeAndPlotBandGaps(Eg, plot=True):
     f = open("./bandgaps.txt", "w+")
     for i in range(len(Eg)):
         f.write(str(Eg[i][0]) + "\t" + str(Eg[i][1]) + "\n")
@@ -142,6 +142,20 @@ def writeBandGaps(Eg):
     for i in range(len(Eg)):
         f.write(str(Eg[i][2]) + "\t" + str(Eg[i][3]) + "\t" + str(Eg[i][4]) + "\t" + str(Eg[i][5]) + "\n")
 
+    if plot==True:
+        Egnp = np.asarray(Eg).transpose()
+        temps[0] = 10
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        line1, = ax.plot(temps, Egnp[:][0], 'o', color='seagreen')
+        line2, = ax.plot(temps, Egnp[:][1], 'o', color='deepskyblue')
+        line1.set_label("Eg")
+        line2.set_label("Eg+Ek")
+        ax.legend()
+        ax.set_title("Eg and Eg+Ek form the temperature")
+        plt.gca().yaxis.set_major_formatter(MathTextSciFormatter("%1.2e"))
+        ax.grid(b=True, color='silver', which="both", linestyle='-', linewidth=0.5)
+        plt.show()
 
 def arrayPrep():
     temps = []
@@ -166,20 +180,6 @@ temps, regRan1, regRan2 = arrayPrep()
 for x in temps:
     absorptionAnalyse(regRan1[int(x/20)], regRan2[int(x/20)], t=x, material='SnS', plotIntens = False, plotReg=True, plotAny=True)
 
-writeBandGaps(Eg)
-print(Eg[:][0])
-Egnp=np.asarray(Eg).transpose()
+writeAndPlotBandGaps(Eg, plot=True)
 
-temps[0]=10
-fig = plt.figure()
-ax = fig.add_subplot(1, 1, 1)
-line1, = ax.plot(temps, Egnp[:][0], 'o', color='seagreen')
-line2, = ax.plot(temps, Egnp[:][1], 'o', color='deepskyblue')
-line1.set_label("Eg")
-line2.set_label("Eg+Ek")
-ax.legend()
-ax.set_title("Eg and Eg+Ek form the temperature")
-plt.gca().yaxis.set_major_formatter(MathTextSciFormatter("%1.2e"))
-ax.grid(b=True, color='silver', which="both", linestyle='-', linewidth=0.5)
-plt.show()
 #absorptionAnalyse(t=10, material='SnS', plotIntens=False)
